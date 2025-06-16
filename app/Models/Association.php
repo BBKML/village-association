@@ -16,4 +16,8 @@ class Association extends Model
         'objectives',
         'main_image'
     ];
+    public function mediaGallery()
+    {
+        return $this->morphOne(MediaGallery::class, 'related');
+    }
 }

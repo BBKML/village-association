@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\MediaGallery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class AdminEventController extends Controller
 {
@@ -30,6 +31,9 @@ class AdminEventController extends Controller
     /**
      * Store a newly created event in storage.
      */
+// Ajouter en haut du fichier
+
+// Modifier la méthode store
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -38,34 +42,38 @@ class AdminEventController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'location' => 'required|string|max:255',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
-        // Handle main image upload
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('events', 'public');
-        }
-
-        $event = Event::create($validated);
-
-        // Handle gallery images
-        if ($request->hasFile('gallery_images')) {
-            $gallery = $event->gallery()->create([
-                'title' => "Galerie pour {$event->title}",
-                'description' => "Galerie automatiquement créée pour l'événement {$event->title}",
-            ]);
-
-            foreach ($request->file('gallery_images') as $image) {
-                $gallery->media()->create([
-                    'path' => $image->store("galleries/{$gallery->id}", 'public'),
-                    'mime_type' => $image->getClientMimeType(),
-                ]);
+        return DB::transaction(function () use ($request, $validated) {
+            if ($request->hasFile('image')) {
+                $validated['image'] = $request->file('image')->store('events', 'public');
             }
-        }
 
-        return redirect()->route('admin.events.index')
-                        ->with('success', 'Événement créé avec succès!');
+            $event = Event::create($validated);
+
+            if ($request->hasFile('gallery_images')) {
+                $gallery = $event->gallery()->create([
+                    'title' => "Galerie pour {$event->title}",
+                    'description' => "Galerie pour l'événement {$event->title}",
+                    'type' => 'event'
+                ]);
+
+                foreach ($request->file('gallery_images') as $image) {
+                    $path = $image->store("galleries/{$gallery->id}", 'public');
+                    $gallery->items()->create([
+                        'file_path' => $path,
+                        'file_type' => str_starts_with($image->getMimeType(), 'image') ? 'image' : 'video',
+                        'caption' => $image->getClientOriginalName(),
+                        'order' => $gallery->items()->max('order') + 1
+                    ]);
+                }
+            }
+
+            return redirect()->route('admin.events.index')
+                ->with('success', 'Événement créé avec succès!');
+        });
     }
 
     /**
@@ -95,8 +103,8 @@ class AdminEventController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'location' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
         // Handle image update
@@ -112,17 +120,20 @@ class AdminEventController extends Controller
 
         // Handle gallery images upload
         if ($request->hasFile('gallery_images')) {
-            $gallery = $event->gallery ?? $event->gallery()->create([
-                'title' => "Galerie pour {$event->title}",
-                'description' => "Galerie automatiquement créée pour l'événement {$event->title}",
-            ]);
+                $gallery = $event->gallery ?? $event->gallery()->create([
+                    'title' => "Galerie pour {$event->title}",
+                    'description' => "Galerie automatiquement créée pour l'événement {$event->title}",
+                    'type' => 'event'
+                ]);
 
             foreach ($request->file('gallery_images') as $image) {
-                $gallery->media()->create([
-                    'path' => $image->store("galleries/{$gallery->id}", 'public'),
-                    'mime_type' => $image->getClientMimeType(),
-                ]);
-            }
+            $gallery->items()->create([
+                'file_path' => $image->store("galleries/{$gallery->id}", 'public'),
+                'file_type' => str_starts_with($image->getMimeType(), 'image') ? 'image' : 'video',
+                'caption' => pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME),
+                'order' => $gallery->items()->max('order') + 1
+            ]);                   
+          }
         }
 
         return redirect()->route('admin.events.index')
@@ -141,9 +152,10 @@ class AdminEventController extends Controller
 
         // Delete associated gallery and media if exists
         if ($event->gallery) {
-            foreach ($event->gallery->media as $media) {
-                Storage::disk('public')->delete($media->path);
-                $media->delete();
+            // CORRECTION: Remplacer media par items
+            foreach ($event->gallery->items as $item) {
+                Storage::disk('public')->delete($item->file_path);
+                $item->delete();
             }
             $event->gallery->delete();
         }

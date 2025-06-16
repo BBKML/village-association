@@ -9,15 +9,16 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('news', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->text('content');
-            $table->date('published_at');
-            $table->string('image')->nullable();
-            $table->boolean('is_published')->default(true);
-            $table->timestamps();
-        });
+    Schema::create('news', function (Blueprint $table) {
+        $table->id();
+        $table->string('title');
+        $table->text('content');
+        $table->timestamp('published_at');
+        $table->string('image')->nullable();
+        $table->boolean('is_published')->default(false);
+        $table->boolean('is_featured')->default(false);  // Vérifier cette ligne
+        $table->timestamps();
+    });
     }
 
     public function down()

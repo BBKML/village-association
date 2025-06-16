@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Association;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class AdminAssociationController extends Controller
 {
@@ -67,27 +68,29 @@ class AdminAssociationController extends Controller
     /**
      * Update the specified association in storage.
      */
+// Modifier la méthode update
     public function update(Request $request, Association $association)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'objectives' => 'required|string',
-            'main_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'main_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
-        if ($request->hasFile('main_image')) {
-            // Delete old image
-            if ($association->main_image) {
-                Storage::disk('public')->delete($association->main_image);
+        return DB::transaction(function () use ($request, $association, $validated) {
+            if ($request->hasFile('main_image')) {
+                if ($association->main_image) {
+                    Storage::disk('public')->delete($association->main_image);
+                }
+                $validated['main_image'] = $request->file('main_image')->store('associations', 'public');
             }
-            $validated['main_image'] = $request->file('main_image')->store('associations', 'public');
-        }
 
-        $association->update($validated);
+            $association->update($validated);
 
-        return redirect()->route('admin.associations.index')
-                        ->with('success', 'Association mise à jour avec succès!');
+            return redirect()->route('admin.associations.index')
+                ->with('success', 'Association mise à jour avec succès!');
+        });
     }
 
     /**

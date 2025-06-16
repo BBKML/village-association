@@ -6,11 +6,21 @@
 @section('admin-content')
 <div class="bg-white shadow rounded-lg p-6">
     <h2 class="text-2xl font-bold mb-6">Éditer l'actualité</h2>
-    
+
+    @if ($errors->any())
+        <div class="mb-4 bg-red-100 text-red-700 p-4 rounded">
+            <ul class="list-disc pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <form action="{{ route('admin.news.update', $news) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
-        
+
         <div class="space-y-6">
             <!-- Titre -->
             <div>
@@ -37,14 +47,16 @@
             <!-- Image -->
             <div>
                 <label for="image" class="block text-sm font-medium text-gray-700">Image</label>
-                @if($news->image)
-                <div class="mt-2 flex items-center">
-                    <img src="{{ asset('storage/' . $news->image) }}" alt="Image actuelle" class="h-16 rounded">
-                    <label class="ml-4 flex items-center">
-                        <input type="checkbox" name="remove_image" value="1" class="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
-                        <span class="ml-2 text-sm text-gray-600">Supprimer l'image</span>
-                    </label>
-                </div>
+                @if ($news->image)
+                    <div class="mt-2 flex items-center">
+                        <img src="{{ asset('storage/' . $news->image) }}" alt="Image actuelle" class="h-16 rounded">
+                        <label class="ml-4 flex items-center">
+                            <input type="checkbox" name="remove_image" value="1"
+                                {{ old('remove_image') ? 'checked' : '' }}
+                                class="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
+                            <span class="ml-2 text-sm text-gray-600">Supprimer l'image</span>
+                        </label>
+                    </div>
                 @endif
                 <input type="file" name="image" id="image"
                     class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
@@ -54,9 +66,20 @@
             <!-- Statut -->
             <div>
                 <label class="flex items-center">
-                    <input type="checkbox" name="is_published" value="1" {{ old('is_published', $news->is_published) ? 'checked' : '' }} 
+                    <input type="checkbox" name="is_published" value="1"
+                        {{ old('is_published', $news->is_published) ? 'checked' : '' }}
                         class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                     <span class="ml-2">Publié</span>
+                </label>
+            </div>
+
+            <!-- Mise en avant -->
+            <div>
+                <label class="flex items-center">
+                    <input type="checkbox" name="is_featured" value="1"
+                        {{ old('is_featured', $news->is_featured) ? 'checked' : '' }}
+                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                    <span class="ml-2">Mettre en avant</span>
                 </label>
             </div>
         </div>

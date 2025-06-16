@@ -4,6 +4,13 @@
 @section('admin-title', $service->name)
 
 @section('admin-content')
+<!-- Messages de notification -->
+@if(session('success'))
+<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+    <p>{{ session('success') }}</p>
+</div>
+@endif
+
 <div class="bg-white shadow rounded-lg p-6">
     <div class="flex justify-between items-start">
         <div>

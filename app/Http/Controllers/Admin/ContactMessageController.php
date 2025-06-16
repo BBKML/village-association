@@ -11,13 +11,20 @@ class ContactMessageController extends Controller
     /**
      * Affiche la liste des messages
      */
+// Modifier la méthode index
     public function index()
     {
-        $messages = ContactMessage::latest()
-            ->paginate(15);
+        $messages = ContactMessage::query()
+            ->when(request('unread'), fn($q) => $q->unread())
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('admin.messages.index', compact('messages'));
-    }
+        return view('admin.messages.index', [
+            'messages' => $messages,
+            'unreadCount' => ContactMessage::unread()->count()
+        ]);
+}
 
     /**
      * Affiche un message spécifique

@@ -43,8 +43,8 @@ class AdminLocalServiceController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('public/services');
-            $validated['image'] = str_replace('public/', '', $path);
+            $path = $request->file('image')->store('services', 'public');
+            $validated['image'] = $path;
         }
 
         LocalService::create($validated);
@@ -85,16 +85,20 @@ class AdminLocalServiceController extends Controller
             'image' => 'nullable|image|max:2048',
         ]);
 
-        if ($request->hasFile('image')) {
+        // Gestion de la suppression d'image
+        if ($request->has('remove_image') && $service->image) {
+            Storage::disk('public')->delete($service->image);
+            $validated['image'] = null;
+        } elseif ($request->hasFile('image')) {
             // Supprime l'ancienne image si elle existe
             if ($service->image) {
-                Storage::delete('public/' . $service->image);
+                Storage::disk('public')->delete($service->image);
             }
             
-            $path = $request->file('image')->store('public/services');
-            $validated['image'] = str_replace('public/', '', $path);
+            $path = $request->file('image')->store('services', 'public');
+            $validated['image'] = $path;
         }
-
+        
         $service->update($validated);
 
         return redirect()->route('admin.services.index')
@@ -107,7 +111,7 @@ class AdminLocalServiceController extends Controller
     public function destroy(LocalService $service)
     {
         if ($service->image) {
-            Storage::delete('public/' . $service->image);
+            Storage::disk('public')->delete($service->image);
         }
 
         $service->delete();

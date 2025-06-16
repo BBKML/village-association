@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Facade;
+
 return [
 
     /*
@@ -66,6 +68,8 @@ return [
     */
 
     'timezone' => 'UTC',
+    'locale' => 'fr',
+    'fallback_locale' => 'fr',
 
     /*
     |--------------------------------------------------------------------------
@@ -78,9 +82,9 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'fr'),
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'fr'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
@@ -104,6 +108,10 @@ return [
             explode(',', env('APP_PREVIOUS_KEYS', ''))
         ),
     ],
+    'aliases' => Facade::defaultAliases()->merge([
+        // ...
+        'Captcha' => Mews\Captcha\Facades\Captcha::class,
+    ])->toArray(),
 
     /*
     |--------------------------------------------------------------------------
@@ -117,6 +125,11 @@ return [
     | Supported drivers: "file", "cache"
     |
     */
+        'contact' => [
+        'address' => env('CONTACT_ADDRESS', 'Adresse non spécifiée'),
+        'phone' => env('CONTACT_PHONE', '+225 XX XX XX XX'),
+        'email' => env('CONTACT_EMAIL', 'contact@association.ci'),
+    ],
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),

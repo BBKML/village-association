@@ -1,59 +1,43 @@
-<!-- resources/views/admin/galleries/create.blade.php -->
 @extends('layouts.admin')
 
-@section('admin-title', 'Créer une galerie')
+@section('title', 'Créer une nouvelle galerie')
 
 @section('admin-content')
-<div class="bg-white shadow rounded-lg p-6">
-    <h2 class="text-2xl font-bold mb-6">Nouvelle galerie média</h2>
-    
-    <form action="{{ route('admin.galleries.store') }}" method="POST">
+<div class="bg-white shadow-md rounded p-6 max-w-2xl mx-auto">
+    <h2 class="text-2xl font-semibold text-blue-600 mb-6 flex items-center">
+        <i class="fas fa-plus mr-2"></i>Créer une nouvelle galerie
+    </h2>
+
+    <form action="{{ route('admin.galleries.store') }}" method="POST" class="space-y-5">
         @csrf
-        
-        <div class="grid grid-cols-1 gap-6">
-            <!-- Titre -->
-            <div>
-                <label for="title" class="block text-sm font-medium text-gray-700">Titre *</label>
-                <input type="text" name="title" id="title" required
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-            </div>
 
-            <!-- Description -->
-            <div>
-                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                <textarea name="description" id="description" rows="3"
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
-            </div>
-
-            <!-- Type -->
-            <div>
-                <label for="type" class="block text-sm font-medium text-gray-700">Type *</label>
-                <select name="type" id="type" required
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">Sélectionnez un type</option>
-                    <option value="activity">Activité</option>
-                    <option value="project">Projet</option>
-                    <option value="event">Événement</option>
-                    <option value="other">Autre</option>
-                </select>
-            </div>
-
-            <!-- Élément associé -->
-            <div>
-                <label for="related_id" class="block text-sm font-medium text-gray-700">Associer à (optionnel)</label>
-                <input type="number" name="related_id" id="related_id" min="1"
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="ID de l'élément associé">
-                <p class="mt-1 text-sm text-gray-500">Laissez vide si non applicable</p>
-            </div>
+        <div>
+            <label for="title" class="block text-sm font-medium text-gray-700">Titre <span class="text-red-500">*</span></label>
+            <input type="text" name="title" id="title" required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500">
         </div>
 
-        <div class="mt-6 flex justify-end">
-            <a href="{{ route('admin.galleries.index') }}" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 mr-3">
-                Annuler
-            </a>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                Créer la galerie
+        <div>
+            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+            <textarea name="description" id="description" rows="4"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+        </div>
+
+        <div>
+            <label for="type" class="block text-sm font-medium text-gray-700">Type <span class="text-red-500">*</span></label>
+            <select name="type" id="type" required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <option value="activity">Activité</option>
+                <option value="project">Projet</option>
+                <option value="event">Événement</option>
+                <option value="other">Autre</option>
+            </select>
+        </div>
+
+        <div class="pt-4">
+            <button type="submit"
+                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 transition">
+                <i class="fas fa-check mr-2"></i>Créer la galerie
             </button>
         </div>
     </form>

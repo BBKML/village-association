@@ -9,14 +9,19 @@ return new class extends Migration
 {
     public function up()
     {
+        // database/migrations/xxxx_create_histories_table.php
         Schema::create('histories', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->text('content');
+            $table->string('slug')->unique();
+            $table->longText('content');
             $table->string('image')->nullable();
             $table->string('founder_name')->nullable();
             $table->text('founder_description')->nullable();
             $table->timestamps();
+            
+            $table->index('slug');
+            $table->index('created_at');
         });
     }
 

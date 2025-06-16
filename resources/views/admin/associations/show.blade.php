@@ -1,49 +1,55 @@
 @extends('layouts.admin')
 
+@section('admin-title', "Détails de l'Association")
 
-@section('title', 'Détails de l\'Association')
-
-@section('content')
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Détails de l'association: {{ $association->name }}</h6>
-            <div>
-                <a href="{{ route('admin.associations.edit', $association) }}" class="btn btn-warning btn-sm">
-                    <i class="fas fa-edit"></i> Modifier
-                </a>
-                <a href="{{ route('admin.associations.index') }}" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-arrow-left"></i> Retour
-                </a>
-            </div>
+@section('admin-content')
+<div class="bg-white shadow rounded-lg p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Détails de l'association : {{ $association->name }}</h2>
+        <div class="space-x-2">
+            <a href="{{ route('admin.associations.edit', $association) }}"
+               class="inline-flex items-center px-4 py-2 bg-yellow-500 text-white text-sm font-medium rounded hover:bg-yellow-600">
+                <i class="fas fa-edit mr-2"></i> Modifier
+            </a>
+            <a href="{{ route('admin.associations.index') }}"
+               class="inline-flex items-center px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded hover:bg-gray-600">
+                <i class="fas fa-arrow-left mr-2"></i> Retour
+            </a>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    @if($association->main_image)
-                        <img src="{{ asset('storage/' . $association->main_image) }}" alt="Image de l'association" class="img-fluid rounded mb-3">
-                    @else
-                        <div class="alert alert-warning">Aucune image disponible</div>
-                    @endif
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+            @if($association->main_image)
+                <img src="{{ asset('storage/' . $association->main_image) }}" alt="Image de l'association" class="rounded-lg shadow w-full object-cover">
+            @else
+                <div class="bg-yellow-100 border border-yellow-300 text-yellow-700 p-4 rounded">
+                    Aucune image disponible
                 </div>
-                <div class="col-md-8">
-                    <h3>{{ $association->name }}</h3>
-                    
-                    <div class="mb-4">
-                        <h5>Description</h5>
-                        <p>{{ $association->description }}</p>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <h5>Objectifs</h5>
-                        <p>{{ $association->objectives }}</p>
-                    </div>
-                    
-                    <div class="text-muted">
-                        <small>Créée le: {{ $association->created_at->format('d/m/Y H:i') }}</small><br>
-                        <small>Dernière modification: {{ $association->updated_at->format('d/m/Y H:i') }}</small>
-                    </div>
-                </div>
+            @endif
+        </div>
+
+        <div class="md:col-span-2">
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Nom de l'association</h3>
+                <p class="text-gray-800">{{ $association->name }}</p>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Description</h3>
+                <p class="text-gray-800">{{ $association->description }}</p>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Objectifs</h3>
+                <p class="text-gray-800">{{ $association->objectives }}</p>
+            </div>
+
+            <div class="text-sm text-gray-500">
+                <p>Créée le : {{ $association->created_at->format('d/m/Y H:i') }}</p>
+                <p>Dernière modification : {{ $association->updated_at->format('d/m/Y H:i') }}</p>
             </div>
         </div>
     </div>
+</div>
 @endsection

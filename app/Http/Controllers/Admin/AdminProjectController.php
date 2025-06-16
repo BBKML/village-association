@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\MediaGallery;
+use App\Models\MediaItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class AdminProjectController extends Controller
 {
@@ -32,46 +35,72 @@ class AdminProjectController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'status' => 'required|in:planned,in_progress,completed,postponed,cancelled',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'needs_volunteers' => 'boolean',
-            'needs_donations' => 'boolean',
-            'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
+        try {
+            Log::info('Début de la création du projet', ['request' => $request->all()]);
 
-        // Handle main image upload
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('projects', 'public');
-        }
-
-        // Convert checkbox values to boolean
-        $validated['needs_volunteers'] = $request->has('needs_volunteers');
-        $validated['needs_donations'] = $request->has('needs_donations');
-
-        $project = Project::create($validated);
-
-        // Handle gallery images
-        if ($request->hasFile('gallery_images')) {
-            $gallery = $project->gallery()->create([
-                'title' => "Galerie pour {$project->title}",
-                'description' => "Galerie automatiquement créée pour le projet {$project->title}",
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'required|string',
+                'start_date' => 'required|date',
+                'end_date' => 'nullable|date',
+                'status' => 'required|in:planned,in_progress,completed,postponed,cancelled',
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'needs_volunteers' => 'boolean',
+                'needs_donations' => 'boolean',
+                'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
-            foreach ($request->file('gallery_images') as $image) {
-                $gallery->media()->create([
-                    'path' => $image->store("galleries/{$gallery->id}", 'public'),
-                    'mime_type' => $image->getClientMimeType(),
-                ]);
-            }
-        }
+            Log::info('Données validées', ['validated' => $validated]);
 
-        return redirect()->route('admin.projects.index')
-                        ->with('success', 'Projet créé avec succès!');
+            // Gestion de l'image principale
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('projects', 'public');
+                $validated['image'] = $imagePath;
+                Log::info('Image principale stockée', ['path' => $imagePath]);
+            }
+
+            // Conversion des checkbox en boolean
+            $validated['needs_volunteers'] = $request->has('needs_volunteers');
+            $validated['needs_donations'] = $request->has('needs_donations');
+
+            Log::info('Données avant création', ['data' => $validated]);
+
+            // Création du projet
+            $project = Project::create($validated);
+            Log::info('Projet créé', ['project' => $project->toArray()]);
+
+            // Gestion de la galerie d'images
+            if ($request->hasFile('gallery_images')) {
+                $gallery = $project->gallery()->create([
+                    'title' => 'Galerie du projet ' . $project->title,
+                    'type' => 'project'
+                ]);
+
+                foreach ($request->file('gallery_images') as $image) {
+                    $path = $image->store('galleries', 'public');
+                    $fileType = str_starts_with($image->getMimeType(), 'image') ? 'image' : 'video';
+                    
+                    $gallery->items()->create([
+                        'file_path' => $path,
+                        'file_type' => $fileType,
+                        'caption' => pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)
+                    ]);
+                }
+                Log::info('Galerie créée', ['gallery' => $gallery->toArray()]);
+            }
+
+            return redirect()->route('admin.projects.index')
+                ->with('success', 'Projet créé avec succès');
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la création du projet', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Une erreur est survenue lors de la création du projet: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -99,7 +128,7 @@ class AdminProjectController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'end_date' => 'nullable|date',
             'status' => 'required|in:planned,in_progress,completed,postponed,cancelled',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'needs_volunteers' => 'boolean',
@@ -107,62 +136,75 @@ class AdminProjectController extends Controller
             'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        // Handle image update
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
+       
+        // Dans la méthode update(), corriger :
+        if ($request->has('remove_image') && $project->image) {
+            Storage::disk('public')->delete($project->image);
+            $validated['image'] = null;
+        } elseif ($request->hasFile('image')) {
             if ($project->image) {
                 Storage::disk('public')->delete($project->image);
             }
-            $validated['image'] = $request->file('image')->store('projects', 'public');
+            $imagePath = $request->file('image')->store('projects', 'public');
+            $validated['image'] = $imagePath;
         }
 
-        // Convert checkbox values to boolean
+        // Conversion des checkbox en boolean
         $validated['needs_volunteers'] = $request->has('needs_volunteers');
         $validated['needs_donations'] = $request->has('needs_donations');
 
+        // Mise à jour du projet
         $project->update($validated);
 
-        // Handle gallery images upload
+        // Gestion de la galerie d'images
         if ($request->hasFile('gallery_images')) {
-            $gallery = $project->gallery ?? $project->gallery()->create([
-                'title' => "Galerie pour {$project->title}",
-                'description' => "Galerie automatiquement créée pour le projet {$project->title}",
-            ]);
+            $gallery = $project->gallery;
+            if (!$gallery) {
+                $gallery = $project->gallery()->create([
+                    'title' => 'Galerie du projet ' . $project->title,
+                    'type' => 'project'
+                ]);
+            }
 
             foreach ($request->file('gallery_images') as $image) {
-                $gallery->media()->create([
-                    'path' => $image->store("galleries/{$gallery->id}", 'public'),
-                    'mime_type' => $image->getClientMimeType(),
+                $path = $image->store('galleries', 'public');
+                $fileType = str_starts_with($image->getMimeType(), 'image') ? 'image' : 'video';
+                
+                $gallery->items()->create([
+                    'file_path' => $path,
+                    'file_type' => $fileType,
+                    'caption' => pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)
                 ]);
             }
         }
 
         return redirect()->route('admin.projects.index')
-                        ->with('success', 'Projet mis à jour avec succès!');
+            ->with('success', 'Projet mis à jour avec succès');
     }
 
     /**
      * Remove the specified project from storage.
      */
+    // Modifier la méthode destroy
     public function destroy(Project $project)
     {
-        // Delete associated image
-        if ($project->image) {
-            Storage::disk('public')->delete($project->image);
-        }
-
-        // Delete associated gallery and media if exists
-        if ($project->gallery) {
-            foreach ($project->gallery->media as $media) {
-                Storage::disk('public')->delete($media->path);
-                $media->delete();
+        DB::transaction(function () use ($project) {
+            if ($project->image) {
+                Storage::disk('public')->delete($project->image);
             }
-            $project->gallery->delete();
-        }
 
-        $project->delete();
+            if ($project->gallery) {
+                $project->gallery->items->each(function ($item) {
+                    Storage::disk('public')->delete($item->file_path);
+                    $item->delete();
+                });
+                $project->gallery->delete();
+            }
+
+            $project->delete();
+        });
 
         return redirect()->route('admin.projects.index')
-                        ->with('success', 'Projet supprimé avec succès!');
+            ->with('success', 'Projet supprimé avec succès!');
     }
 }

@@ -15,11 +15,17 @@ class News extends Model
         'content',
         'published_at',
         'image',
-        'is_published'
+        'is_published',
+        'is_featured'
     ];
 
     protected $casts = [
         'published_at' => 'date',
-        'is_published' => 'boolean'
+        'is_published' => 'boolean',
+        'is_featured' => 'boolean' 
     ];
+    // Ajouter un scope pour les actualités publiées
+    public function scopePublished($query) {
+        return $query->where('is_published', true);
+    }
 }

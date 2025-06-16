@@ -26,6 +26,32 @@ class Event extends Model
 
     public function gallery()
     {
-        return $this->morphOne(MediaGallery::class, 'related');
+        return $this->morphOne(MediaGallery::class, 'galleriable');
     }
+
+    public function scopeUpcoming($query)
+    {
+        return $query->where('start_date', '>=', now())
+                    ->orderBy('start_date', 'asc');
+    }
+
+    public function scopePast($query)
+    {
+        return $query->where('end_date', '<', now())
+                    ->orderBy('start_date', 'desc');
+    }
+
+    public function scopeCurrent($query)
+    {
+        return $query->where('start_date', '<=', now())
+                    ->where(function($q) {
+                        $q->whereNull('end_date')
+                          ->orWhere('end_date', '>=', now());
+                    })
+                    ->orderBy('start_date', 'asc');
+    }
+    public function scopeWithGallery($query)
+        {
+            return $query->with('gallery.items');
+        }
 }

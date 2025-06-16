@@ -16,12 +16,15 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->date('start_date');
             $table->date('end_date')->nullable();
-            $table->enum('status', ['planning', 'in_progress', 'completed', 'cancelled']);
+            $table->text('objectives')->nullable();
+            $table->text('impact')->nullable();
+            $table->enum('status', ['planned', 'in_progress', 'completed', 'postponed', 'cancelled'])->default('planned');
             $table->boolean('needs_volunteers')->default(false);
             $table->boolean('needs_donations')->default(false);
             $table->timestamps();
         });
     }
+ 
 
     public function down()
     {

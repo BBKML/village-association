@@ -1,65 +1,97 @@
 <!-- resources/views/admin/news/index.blade.php -->
 @extends('layouts.admin')
 
-@section('admin-title', 'Gestion des actualités')
+@section('admin-title', 'Liste des actualités')
 
 @section('admin-content')
-<div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold">Actualités</h2>
-    <a href="{{ route('admin.news.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-        Créer une actualité
-    </a>
-</div>
+<div class="bg-white shadow rounded-lg p-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">Actualités</h2>
+        <a href="{{ route('admin.news.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            + Nouvelle actualité
+        </a>
+    </div>
 
-<div class="bg-white shadow rounded-lg overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <table class="w-full table-auto border border-gray-200">
+        <thead class="bg-gray-100">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th class="px-4 py-2 text-left">Image</th>
+                <th class="px-4 py-2 text-left">Titre</th>
+                <th class="px-4 py-2 text-left">Statut</th>
+                <th class="px-4 py-2 text-left">Mise en avant</th>
+                <th class="px-4 py-2 text-left">Date</th>
+                <th class="px-4 py-2 text-left">Actions</th>
             </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            @foreach($news as $item)
-            <tr>
-                <td class="px-6 py-4">
-                    <div class="font-medium">{{ $item->title }}</div>
-                    @if($item->image)
-                    <div class="mt-1">
-                        <span class="text-xs text-gray-500">Avec image</span>
-                    </div>
-                    @endif
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    {{ $item->published_at->format('d/m/Y') }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <form action="{{ route('admin.news.toggle-publish', $item) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="px-2 py-1 text-xs rounded-full {{ $item->is_published ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+        <tbody>
+            @forelse ($news as $item)
+                <tr class="border-t align-middle">
+                    <!-- Image -->
+                    <td class="px-4 py-3 border-b text-center">
+                        @if($item->image)
+                            <img src="{{ asset('storage/' . $item->image) }}" alt="Image" class="w-16 h-16 rounded object-cover shadow-sm mx-auto">
+                        @else
+                            <span class="text-gray-400 text-sm italic">Aucune</span>
+                        @endif
+                    </td>
+
+                    <!-- Titre -->
+                    <td class="px-4 py-3 border-b text-gray-800 font-medium">{{ $item->title }}</td>
+
+                    <!-- Statut -->
+                    <td class="px-4 py-3 border-b">
+                        <span class="px-2 py-1 text-xs rounded-full {{ $item->is_published ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                             {{ $item->is_published ? 'Publié' : 'Brouillon' }}
-                        </button>
-                    </form>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <a href="{{ route('admin.news.edit', $item) }}" class="text-blue-600 hover:text-blue-900 mr-3">Éditer</a>
-                    <form action="{{ route('admin.news.destroy', $item) }}" method="POST" class="inline">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette actualité ?')">
-                            Supprimer
-                        </button>
-                    </form>
-                </td>
-            </tr>
-            @endforeach
+                        </span>
+                    </td>
+                    
+                    <!-- Mise en avant -->
+                    <td class="px-4 py-3 border-b">
+                        @if($item->is_featured)
+                            <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-star mr-1"></i> À la une
+                            </span>
+                        @else
+                            <span class="text-gray-400 text-xs">-</span>
+                        @endif
+                    </td>
+                    
+                    <!-- Date -->
+                    <td class="px-4 py-3 border-b">{{ $item->published_at->format('d/m/Y') }}</td>
+
+                    <!-- Actions -->
+                    <td class="px-4 py-3 border-b space-x-2">
+                        <a href="{{ route('admin.news.show', $item) }}"
+                           class="inline-flex items-center px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600"
+                           title="Voir">
+                            <i class="fas fa-eye mr-1"></i> 
+                        </a>
+                        <a href="{{ route('admin.news.edit', $item) }}"
+                           class="inline-flex items-center px-3 py-1.5 bg-yellow-500 text-white text-xs font-medium rounded hover:bg-yellow-600"
+                           title="Modifier">
+                            <i class="fas fa-edit mr-1"></i> 
+                        </a>
+                        <form action="{{ route('admin.news.destroy', $item) }}" method="POST" class="inline" onsubmit="return confirm('Supprimer cette actualité ?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                    class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700"
+                                    title="Supprimer">
+                                <i class="fas fa-trash mr-1"></i> 
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="6" class="px-4 py-6 text-center text-gray-500 italic">Aucune actualité trouvée.</td>
+                </tr>
+            @endforelse
         </tbody>
     </table>
-</div>
 
-<div class="mt-4">
-    {{ $news->links() }}
+    <div class="mt-6">
+        {{ $news->links() }}
+    </div>
 </div>
 @endsection

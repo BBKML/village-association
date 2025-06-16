@@ -17,21 +17,28 @@
                 </span>
             </div>
         </div>
-        <div class="flex space-x-2">
+        <div class="flex items-center space-x-3">
             <a href="{{ route('admin.news.edit', $news) }}" class="text-blue-600 hover:text-blue-800">
                 Éditer
             </a>
+            <form action="{{ route('admin.news.destroy', $news) }}" method="POST" onsubmit="return confirm('Confirmer la suppression ?')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="text-red-600 hover:text-red-800">
+                    Supprimer
+                </button>
+            </form>
         </div>
     </div>
 
-    @if($news->image)
-    <div class="mb-6">
-        <img src="{{ asset('storage/' . $news->image) }}" alt="{{ $news->title }}" class="rounded-lg max-w-full h-auto">
-    </div>
+    @if ($news->image)
+        <div class="mb-6">
+            <img src="{{ asset('storage/' . $news->image) }}" alt="{{ $news->title }}" class="rounded-lg max-w-full h-auto">
+        </div>
     @endif
 
     <div class="prose max-w-none">
-        {!! nl2br(e($news->content)) !!}
+        {!! nl2br(e($news->content)) !!}  <!-- e() pour échapper le HTML -->
     </div>
 
     <div class="mt-6">

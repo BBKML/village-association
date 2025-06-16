@@ -1,50 +1,55 @@
 @extends('layouts.admin')
 
+@section('title', "Détails de l'Activité")
 
-@section('title', 'Détails de l\'Activité')
+@section('admin-content')
+<div class="bg-white shadow-md rounded p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-blue-600">Détails de l'Activité</h2>
+        <a href="{{ route('admin.activities.index') }}" class="inline-flex items-center px-3 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded hover:bg-gray-300">
+            <i class="fas fa-arrow-left mr-2"></i> Retour
+        </a>
+    </div>
 
-@section('content')
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Détails de l'Activité</h6>
-            <a href="{{ route('admin.activities.index') }}" class="btn btn-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i> Retour
-            </a>
+    <div class="grid md:grid-cols-3 gap-6">
+        <div class="md:col-span-2 space-y-4">
+            <h3 class="text-xl font-bold text-gray-700">{{ $activity->title }}</h3>
+            <p><strong class="text-gray-600">Date :</strong> {{ $activity->date->format('d/m/Y') }}</p>
+            <p><strong class="text-gray-600">Lieu :</strong> {{ $activity->location }}</p>
+            <p><strong class="text-gray-600">Description :</strong></p>
+            <div class="text-gray-700 whitespace-pre-line">{{ $activity->description }}</div>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-8">
-                    <h3>{{ $activity->title }}</h3>
-                    <p><strong>Date :</strong> {{ $activity->date->format('d/m/Y') }}</p>
-                    <p><strong>Lieu :</strong> {{ $activity->location }}</p>
-                    <p><strong>Description :</strong></p>
-                    <p>{{ $activity->description }}</p>
-                </div>
-                <div class="col-md-4">
-                    @if($activity->image)
-                        <img src="{{ asset('storage/' . $activity->image) }}" alt="Image de l'activité" class="img-fluid rounded">
-                    @else
-                        <div class="text-muted">Aucune image disponible</div>
-                    @endif
-                </div>
-            </div>
-            
-            @if($activity->gallery)
-                <hr>
-                <h5>Galerie associée</h5>
-                <div class="row">
-                    @foreach($activity->gallery->media as $media)
-                        <div class="col-md-3 mb-3">
-                            <img src="{{ asset('storage/' . $media->path) }}" alt="Media" class="img-thumbnail">
-                        </div>
-                    @endforeach
-                </div>
+        <div>
+            @if($activity->image)
+                <img src="{{ asset('storage/' . $activity->image) }}" alt="Image de l'activité" class="w-full h-auto rounded shadow">
+            @else
+                <div class="text-gray-500 italic">Aucune image disponible</div>
             @endif
         </div>
-        <div class="card-footer">
-            <a href="{{ route('admin.activities.edit', $activity) }}" class="btn btn-warning">
-                <i class="fas fa-edit"></i> Modifier
-            </a>
-        </div>
     </div>
+
+    @if($activity->gallery && $activity->gallery->items->isNotEmpty())
+        <div class="mt-8">
+            <h4 class="text-lg font-semibold text-gray-700 mb-4">Galerie associée</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                @foreach($activity->gallery->items as $item)
+                    @if($item->file_type === 'image')
+                        <div class="relative">
+                            <img src="{{ asset('storage/' . $item->file_path) }}" 
+                                alt="{{ $item->caption }}" 
+                                class="w-full h-32 object-cover rounded shadow"
+                                loading="lazy">
+                        </div>
+                    @endif
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    <div class="mt-6 flex justify-end">
+        <a href="{{ route('admin.activities.edit', $activity) }}" class="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+            <i class="fas fa-edit mr-2"></i> Modifier
+        </a>
+    </div>
+</div>
 @endsection

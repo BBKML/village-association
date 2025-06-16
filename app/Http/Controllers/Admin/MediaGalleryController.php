@@ -7,6 +7,7 @@ use App\Models\MediaGallery;
 use App\Models\MediaItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class MediaGalleryController extends Controller
 {
@@ -36,7 +37,8 @@ class MediaGalleryController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:activity,project,event,other',
-            'related_id' => 'nullable|integer'
+            'related_id' => 'nullable|integer',
+            'related_type' => 'nullable|string|required_with:related_id',
         ]);
 
         $gallery = MediaGallery::create($validated);
@@ -50,8 +52,41 @@ class MediaGalleryController extends Controller
      */
     public function show(MediaGallery $gallery)
     {
-        $gallery->load('items');
+        $gallery->load(['items' => function ($query) {
+            $query->orderBy('order', 'asc');
+        }]);
         return view('admin.galleries.show', compact('gallery'));
+    }
+
+    /**
+     * Affiche le formulaire d'édition d'une galerie
+     */
+// Modifier la méthode edit pour utiliser l'injection de modèle
+    public function edit(MediaGallery $gallery)
+    {
+        return view('admin.galleries.edit', compact('gallery'));
+    }
+
+    // Ajouter dans la méthode destroy
+
+
+    /**
+     * Met à jour une galerie
+     */
+    public function update(Request $request, MediaGallery $gallery)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'type' => 'required|in:activity,project,event,other',
+            'related_id' => 'nullable|integer',
+            'related_type' => 'nullable|string|required_with:related_id',
+        ]);
+
+        $gallery->update($validated);
+
+        return redirect()->route('admin.galleries.show', $gallery)
+            ->with('success', 'Galerie mise à jour avec succès');
     }
 
     /**
@@ -60,16 +95,19 @@ class MediaGalleryController extends Controller
     public function upload(Request $request, MediaGallery $gallery)
     {
         $request->validate([
-            'files.*' => 'required|file|mimes:jpg,jpeg,png,gif,mp4,mov|max:5120'
+            'files.*' => 'required|file|mimes:jpg,jpeg,png,gif,mp4,mov|max:5120',
         ]);
 
+        $lastOrder = $gallery->items()->max('order') ?? 0;
+
         foreach ($request->file('files') as $file) {
-            $path = $file->store("public/galleries/{$gallery->id}");
-            
+            $path = $file->store("galleries/{$gallery->id}", 'public');
+
             $gallery->items()->create([
-                'file_path' => str_replace('public/', '', $path),
+                'file_path' => $path,
                 'file_type' => str_starts_with($file->getMimeType(), 'image') ? 'image' : 'video',
-                'caption' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)
+                'caption' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+                'order' => ++$lastOrder,
             ]);
         }
 
@@ -77,27 +115,16 @@ class MediaGalleryController extends Controller
     }
 
     /**
-     * Supprime un média
-     */
-    public function destroyMedia(MediaItem $media)
-    {
-        Storage::delete('public/' . $media->file_path);
-        $media->delete();
-        
-        return back()->with('success', 'Média supprimé avec succès');
-    }
-
-    /**
-     * Supprime une galerie
+     * Supprime une galerie et tous ses médias
      */
     public function destroy(MediaGallery $gallery)
     {
-        // Supprime tous les fichiers associés
-        foreach ($gallery->items as $item) {
-            Storage::delete('public/' . $item->file_path);
-        }
-        
-        $gallery->delete();
+        DB::transaction(function () use ($gallery) {
+            $gallery->items->each(function ($item) {
+                Storage::disk('public')->delete($item->file_path);
+            });
+            $gallery->delete();
+        });
 
         return redirect()->route('admin.galleries.index')
             ->with('success', 'Galerie supprimée avec succès');

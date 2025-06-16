@@ -2,64 +2,66 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Association;
 use App\Models\News;
 use App\Models\Event;
-use App\Models\Activity;
 use App\Models\Project;
-use App\Models\History;
-use App\Models\LocalService;
-use Carbon\Carbon;
+use App\Models\Member;
+use App\Models\MediaGallery;
 
 class HomeController extends Controller
 {
     /**
-     * Show the application homepage.
+     * Affiche la page d'accueil du site
      *
-     * @return \Illuminate\Contracts\Support\Renderable
+     * @return \Illuminate\View\View
      */
     public function index()
     {
-        // Dernières actualités publiées (3 maximum)
+        // Récupération des données principales
+        $association = Association::with('mediaGallery')->first();
+        
+        // Actualités - seulement les publiées
         $latestNews = News::where('is_published', true)
-            ->where('published_at', '<=', Carbon::now())
-            ->orderBy('published_at', 'desc')
-            ->take(3)
-            ->get();
+                         ->latest('published_at')
+                         ->take(3)
+                         ->get();
 
-        // Événements à venir (3 maximum)
-        $upcomingEvents = Event::where('end_date', '>=', Carbon::now())
-            ->orderBy('start_date', 'asc')
-            ->take(3)
-            ->get();
+        // Événements à venir
+        $upcomingEvents = Event::where('start_date', '>=', now())
+                             ->orderBy('start_date')
+                             ->take(3)
+                             ->get();
 
-        // Activités récentes (3 maximum)
-        $latestActivities = Activity::where('date', '<=', Carbon::now())
-            ->orderBy('date', 'desc')
-            ->take(3)
-            ->get();
+        // Projets en cours
+        $ongoingProjects = Project::where('status', 'in_progress')
+                                ->latest()
+                                ->take(2)
+                                ->get();
 
-        // Projets en cours ou récents
-        $featuredProjects = Project::whereIn('status', ['en_cours', 'termine'])
-            ->orderBy('start_date', 'desc')
-            ->take(3)
-            ->get();
+        // Membres du bureau
+        $boardMembers = Member::where('is_board_member', true)
+                            ->orderBy('order')
+                            ->take(4)
+                            ->get();
 
-        // Services locaux mis en avant
-        $featuredServices = LocalService::inRandomOrder()
-            ->take(6)
-            ->get();
-
-        // Histoire de l'association
-        $history = History::first();
+        // Galeries avec au moins un élément
+        $galleries = MediaGallery::with(['items' => function($query) {
+                            $query->orderBy('order')->take(1);
+                        }])
+                        ->withCount('items')
+                        ->whereHas('items')
+                        ->latest()
+                        ->take(6)
+                        ->get();
 
         return view('home', [
+            'association' => $association,
             'latestNews' => $latestNews,
             'upcomingEvents' => $upcomingEvents,
-            'latestActivities' => $latestActivities,
-            'featuredProjects' => $featuredProjects,
-            'featuredServices' => $featuredServices,
-            'history' => $history
+            'ongoingProjects' => $ongoingProjects,
+            'boardMembers' => $boardMembers,
+            'galleries' => $galleries
         ]);
     }
 }
